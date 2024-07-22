@@ -3,7 +3,8 @@
 
 #include <vector>
 #include <GL/glew.h>
-#include <iostream>
+#include <glm/glm.hpp>
+
 
 class Terrain {
 public:
@@ -17,9 +18,8 @@ private:
     int gridSize;
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
-    GLuint VAO, VBO, EBO;
-
-    void setupBuffers();
+    float getHeight(float x, float z) const;
+    glm::vec3 calculateColor(float height) const;
 };
 
-#endif
+#endif 

@@ -1,8 +1,8 @@
 CC = g++
 CFLAGS = -std=c++11 -Wall -I.
-LIBS = -lGL -lGLEW -lglfw
+LIBS = -lGL -lGLEW -lglfw -lm
 
-SRCS = main.cpp window.cpp input.cpp terrain.cpp
+SRCS = main.cpp window.cpp terrain.cpp
 OBJS = $(SRCS:.cpp=.o)
 TARGET = terrain_renderer
 
