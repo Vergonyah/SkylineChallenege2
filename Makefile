@@ -1,12 +1,18 @@
 CC = g++
-CFLAGS = -std=c++11 -Wall
+CFLAGS = -std=c++11 -Wall -I.
 LIBS = -lGL -lGLEW -lglfw
 
+SRCS = main.cpp window.cpp input.cpp
+OBJS = $(SRCS:.cpp=.o)
 TARGET = terrain_renderer
-SRCS = main.cpp
 
-$(TARGET): $(SRCS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LIBS)
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+
+%.o: %.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(OBJS) $(TARGET)
