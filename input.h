@@ -2,7 +2,15 @@
 #define INPUT_H
 
 #include <GLFW/glfw3.h>
+#include "camera.h"
 
-void processInput(GLFWwindow* window);
+extern bool leftMouseButtonPressed;
+extern float lastX;
+extern float lastY;
+extern bool firstMouse;
 
-#endif 
+void processInput(GLFWwindow* window, Camera& camera, float deltaTime, bool& wireframe, bool& wireframeKeyPressed);
+void mouseCallback(GLFWwindow* window, double xpos, double ypos);
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+
+#endif // INPUT_H

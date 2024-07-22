@@ -1,29 +1,21 @@
 #include "window.h"
-//#include "input.h" // Temporarily put the input I'd use here into my main code, since this was giving me issues.
+#include "input.h"
 #include "terrain.h"
+#include "camera.h"
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-glm::vec3 cameraPos = glm::vec3(0.0f, 20.0f, 50.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
+float sensitivity = 0.1f;
+Camera camera(glm::vec3(0.0f, 20.0f, 50.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, sensitivity);
 
-void processInput(GLFWwindow* window)
+bool wireframe = false;
+bool wireframeKeyPressed = false;
+
+void framebufferSizeCallback(GLFWwindow* window, int width, int height)
 {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    float cameraSpeed = 0.05f;
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        cameraPos += cameraSpeed * cameraFront;
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        cameraPos -= cameraSpeed * cameraFront;
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+    glViewport(0, 0, width, height);
 }
 
 int main()
@@ -35,14 +27,26 @@ int main()
         return -1;
     }
 
-    Terrain terrain(200); 
+    glfwSetFramebufferSizeCallback(window.getWindow(), framebufferSizeCallback);
+    glfwSetCursorPosCallback(window.getWindow(), mouseCallback);
+    glfwSetMouseButtonCallback(window.getWindow(), mouseButtonCallback);
+    glfwSetInputMode(window.getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwSetWindowUserPointer(window.getWindow(), &camera);
+
+    Terrain terrain(200);
     terrain.generate();
 
     glEnable(GL_DEPTH_TEST);
+    glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL); // Set initial polygon mode
 
     while (!window.shouldClose())
     {
-        processInput(window.getWindow());
+        float currentFrame = glfwGetTime();
+        static float lastFrame = 0.0f;
+        float deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
+        processInput(window.getWindow(), camera, deltaTime, wireframe, wireframeKeyPressed);
         window.clear();
 
         glMatrixMode(GL_PROJECTION);
@@ -52,7 +56,7 @@ int main()
 
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
-        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        glm::mat4 view = camera.GetViewMatrix();
         glLoadMatrixf(glm::value_ptr(view));
 
         terrain.render();
