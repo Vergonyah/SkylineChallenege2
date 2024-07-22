@@ -5,4 +5,4 @@
 
 void processInput(GLFWwindow* window);
 
-#endif // INPUT_H
+#endif 
