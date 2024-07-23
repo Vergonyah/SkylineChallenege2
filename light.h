@@ -1,4 +1,3 @@
-// light.h
 #ifndef LIGHT_H
 #define LIGHT_H
 
@@ -12,5 +11,7 @@ struct Light {
     Light(glm::vec3 pos, glm::vec3 col = glm::vec3(1.0f), float intens = 1.0f)
         : position(pos), color(col), intensity(intens) {}
 };
+
+void renderCube();
 
 #endif // LIGHT_H

@@ -32,6 +32,11 @@ void Terrain::setShowNormals(bool show) {
     showNormals = show;
 }
 
+
+int Terrain::getTriangleCount() const {
+    return indices.size() / 3;
+}
+
 bool Terrain::loadHeightmap(const std::string& filename) {
     int channels;
     unsigned char* data = stbi_load(filename.c_str(), &heightmapWidth, &heightmapHeight, &channels, 1);

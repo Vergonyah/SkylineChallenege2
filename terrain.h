@@ -17,7 +17,7 @@ public:
     void initComputeShader();
     void computeNormals();
     void setShowNormals(bool);
-
+    int getTriangleCount() const;
     bool showNormals;
 
 private:
