@@ -1,3 +1,6 @@
+// window.cpp
+// Implements the Window class methods
+
 #include "window.h"
 
 Window::Window(int width, int height, const std::string& title)
@@ -13,12 +16,13 @@ Window::~Window()
 
 bool Window::init()
 {
+    // Initialize GLFW
     if (!glfwInit()) {
         std::cout << "Failed to initialize GLFW" << std::endl;
         return false;
     }
 
-
+    // Create GLFW window
     window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
     if (window == NULL)
     {
@@ -30,6 +34,7 @@ bool Window::init()
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
+    // Initialize GLEW
     if (glewInit() != GLEW_OK)
     {
         std::cout << "Failed to initialize GLEW" << std::endl;

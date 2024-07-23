@@ -1,3 +1,6 @@
+// terrain.cpp
+// Implements the Terrain class methods for generating and rendering 3D terrain
+
 #include "terrain.h"
 #include <cmath>
 #include <iostream>
@@ -18,8 +21,8 @@ Terrain::Terrain(int gridSize)
       heightMapTexture(0),
       normalMapTexture(0) {}
 
-
 Terrain::~Terrain() {
+    // Clean up OpenGL resources
     glDeleteProgram(computeProgram);
     glDeleteTextures(1, &heightMapTexture);
     glDeleteTextures(1, &normalMapTexture);
@@ -32,12 +35,12 @@ void Terrain::setShowNormals(bool show) {
     showNormals = show;
 }
 
-
 int Terrain::getTriangleCount() const {
     return indices.size() / 3;
 }
 
 bool Terrain::loadHeightmap(const std::string& filename) {
+    // Load heightmap image using stb_image
     int channels;
     unsigned char* data = stbi_load(filename.c_str(), &heightmapWidth, &heightmapHeight, &channels, 1);
     if (!data) {
@@ -62,6 +65,7 @@ void Terrain::generate() {
     vertices.clear();
     indices.clear();
 
+    // Generate vertices
     for (int z = 0; z < gridSize; ++z) {
         for (int x = 0; x < gridSize; ++x) {
             float xPos = x * step - size / 2.0f;
@@ -73,6 +77,7 @@ void Terrain::generate() {
         }
     }
 
+    // Generate indices for triangles
     for (int z = 0; z < gridSize - 1; ++z) {
         for (int x = 0; x < gridSize - 1; ++x) {
             unsigned int topLeft = z * gridSize + x;
@@ -80,10 +85,12 @@ void Terrain::generate() {
             unsigned int bottomLeft = (z + 1) * gridSize + x;
             unsigned int bottomRight = bottomLeft + 1;
 
+            // First triangle
             indices.push_back(topLeft);
             indices.push_back(bottomLeft);
             indices.push_back(topRight);
 
+            // Second triangle
             indices.push_back(topRight);
             indices.push_back(bottomLeft);
             indices.push_back(bottomRight);
@@ -91,28 +98,30 @@ void Terrain::generate() {
     }
     calculateNormals();
     setupBuffers();
-
 }
 
 void Terrain::setupBuffers() {
+    // Set up vertex buffer
     glGenBuffers(1, &vertexBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
 
+    // Set up index buffer
     glGenBuffers(1, &indexBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
 
+    // Set up normal buffer
     glGenBuffers(1, &normalBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
 }
 
-
 void Terrain::calculateNormals() {
     normals.clear();
     normals.resize(vertices.size(), 0.0f);
 
+    // Calculate normals for each triangle
     for (size_t i = 0; i < indices.size(); i += 3) {
         unsigned int i0 = indices[i] * 3;
         unsigned int i1 = indices[i+1] * 3;
@@ -124,6 +133,7 @@ void Terrain::calculateNormals() {
 
         glm::vec3 normal = glm::normalize(glm::cross(v2 - v1, v3 - v1));
 
+        // Accumulate normals for each vertex
         for (int j = 0; j < 3; ++j) {
             normals[i0+j] += normal[j];
             normals[i1+j] += normal[j];
@@ -131,6 +141,7 @@ void Terrain::calculateNormals() {
         }
     }
 
+    // Normalize the accumulated normals
     for (size_t i = 0; i < normals.size(); i += 3) {
         glm::vec3 n(normals[i], normals[i+1], normals[i+2]);
         n = glm::normalize(n);
@@ -145,19 +156,21 @@ float Terrain::getHeight(int x, int z) const {
         return 0.0f;
     }
     
+    // Map grid coordinates to heightmap coordinates
     int heightmapX = static_cast<int>((static_cast<float>(x) / gridSize) * heightmapWidth);
     int heightmapZ = static_cast<int>((static_cast<float>(z) / gridSize) * heightmapHeight);
     
     int index = heightmapZ * heightmapWidth + heightmapX;
-    return static_cast<float>(heightmapData[index]) / 255.0f * 10.0f;  
+    return static_cast<float>(heightmapData[index]) / 255.0f * 10.0f;  // Scale height
 }
 
 glm::vec3 Terrain::calculateColor(float height) const {
-    if (height < 1.0f) return glm::vec3(0.2f, 0.2f, 0.8f);  
-    if (height < 3.0f) return glm::vec3(0.8f, 0.7f, 0.4f);  
-    if (height < 6.0f) return glm::vec3(0.4f, 0.8f, 0.4f);  
-    if (height < 8.0f) return glm::vec3(0.5f, 0.5f, 0.5f);  
-    return glm::vec3(1.0f, 1.0f, 1.0f);  
+    // Simple color gradient based on height
+    if (height < 1.0f) return glm::vec3(0.2f, 0.2f, 0.8f);  // Water
+    if (height < 3.0f) return glm::vec3(0.8f, 0.7f, 0.4f);  // Sand
+    if (height < 6.0f) return glm::vec3(0.4f, 0.8f, 0.4f);  // Grass
+    if (height < 8.0f) return glm::vec3(0.5f, 0.5f, 0.5f);  // Rock
+    return glm::vec3(1.0f, 1.0f, 1.0f);  // Snow
 }
 
 void Terrain::render() const {
@@ -167,12 +180,15 @@ void Terrain::render() const {
     glEnableClientState(GL_NORMAL_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
 
+    // Bind vertex buffer
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
     glVertexPointer(3, GL_FLOAT, 0, nullptr);
 
+    // Bind normal buffer
     glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
     glNormalPointer(GL_FLOAT, 0, nullptr);
 
+    // Generate and bind color buffer
     std::vector<glm::vec3> colors(vertices.size() / 3);
     for (size_t i = 0; i < vertices.size(); i += 3) {
         colors[i / 3] = calculateColor(vertices[i + 1]); 
@@ -183,9 +199,11 @@ void Terrain::render() const {
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(glm::vec3), colors.data(), GL_STATIC_DRAW);
     glColorPointer(3, GL_FLOAT, 0, nullptr);
 
+    // Bind index buffer and draw
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
 
+    // Clean up
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
@@ -194,31 +212,35 @@ void Terrain::render() const {
 
     glDisable(GL_LIGHTING);
 
+    // Render normals if enabled
     if (showNormals) {
         renderNormals();
     }
 }
 
-
 void Terrain::initComputeShader() {
+    // Create and compile compute shader
     GLuint computeShader = glCreateShader(GL_COMPUTE_SHADER);
     std::string computeShaderSource = loadShaderSource("compute_shader.glsl");
     const char* source = computeShaderSource.c_str();
     glShaderSource(computeShader, 1, &source, nullptr);
     glCompileShader(computeShader);
 
+    // Create and link compute program
     computeProgram = glCreateProgram();
     glAttachShader(computeProgram, computeShader);
     glLinkProgram(computeProgram);
 
     glDeleteShader(computeShader);
 
+    // Create height map texture
     glGenTextures(1, &heightMapTexture);
     glBindTexture(GL_TEXTURE_2D, heightMapTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, gridSize, gridSize, 0, GL_RED, GL_FLOAT, vertices.data());
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
+    // Create normal map texture
     glGenTextures(1, &normalMapTexture);
     glBindTexture(GL_TEXTURE_2D, normalMapTexture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, gridSize, gridSize, 0, GL_RGBA, GL_FLOAT, nullptr);
@@ -229,12 +251,15 @@ void Terrain::initComputeShader() {
 void Terrain::computeNormals() {
     glUseProgram(computeProgram);
 
+    // Bind buffers and textures
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertexBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, indexBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, normalBuffer);
 
+    // Set uniform
     glUniform1i(glGetUniformLocation(computeProgram, "gridSize"), gridSize);
 
+    // Dispatch compute shader
     glDispatchCompute((gridSize * gridSize + 255) / 256, 1, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }

@@ -1,3 +1,6 @@
+// window.h
+// Defines the Window class for managing the GLFW window
+
 #ifndef WINDOW_H
 #define WINDOW_H
 
@@ -11,6 +14,7 @@ public:
     Window(int width, int height, const std::string& title);
     ~Window();
 
+    // Public methods
     bool init();
     bool shouldClose() const;
     void clear() const;
@@ -24,7 +28,8 @@ private:
     std::string title;
     GLFWwindow* window;
 
+    // Callback for window resize
     static void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 };
 
-#endif 
+#endif

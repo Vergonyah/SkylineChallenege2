@@ -1,3 +1,6 @@
+// terrain.h
+// Defines the Terrain class for generating and rendering 3D terrain
+
 #ifndef TERRAIN_H
 #define TERRAIN_H
 
@@ -11,6 +14,7 @@ public:
     Terrain(int gridSize);
     ~Terrain();
 
+    // Public methods
     bool loadHeightmap(const std::string& filename);
     void generate();
     void render() const;
@@ -18,9 +22,11 @@ public:
     void computeNormals();
     void setShowNormals(bool);
     int getTriangleCount() const;
+    
     bool showNormals;
 
 private:
+    // Private member variables
     int gridSize;
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
@@ -32,6 +38,7 @@ private:
     GLuint heightMapTexture;
     GLuint normalMapTexture;
 
+    // Private methods
     float getHeight(int x, int z) const;
     glm::vec3 calculateColor(float height) const;
     void renderNormals() const;
@@ -42,6 +49,6 @@ private:
     GLuint indexBuffer;
     GLuint normalBuffer;
     void setupBuffers();
-    };
+};
 
 #endif

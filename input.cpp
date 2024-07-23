@@ -1,19 +1,26 @@
+// input.cpp
+// Implements input handling functions
+
 #include "input.h"
 #include "light.h"
 #include <vector>
 #include <iostream>
 
+// Global input state variables
 bool leftMouseButtonPressed = false;
 float lastX = 400, lastY = 300;
 bool firstMouse = true;
 
+// External light vector (defined in main.cpp)
 extern std::vector<Light> lights;
 
 void processInput(GLFWwindow* window, Camera& camera, float deltaTime, bool& wireframe, bool& wireframeKeyPressed, bool& showNormals)
 {
+    // Check for exit
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
+    // Camera movement
     float cameraSpeed = 2.5f * deltaTime;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(cameraSpeed, true, false, false, false);
@@ -24,6 +31,7 @@ void processInput(GLFWwindow* window, Camera& camera, float deltaTime, bool& wir
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(cameraSpeed, false, false, false, true);
 
+    // Toggle wireframe mode
     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
     {
         if (!wireframeKeyPressed)
@@ -38,6 +46,7 @@ void processInput(GLFWwindow* window, Camera& camera, float deltaTime, bool& wir
         wireframeKeyPressed = false;
     }
 
+    // Toggle normal visualization
     static bool normalKeyPressed = false;
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS)
     {
@@ -52,12 +61,12 @@ void processInput(GLFWwindow* window, Camera& camera, float deltaTime, bool& wir
         normalKeyPressed = false;
     }
 
-        static bool lightKeyPressed = false;
+    // Place new light at camera position
+    static bool lightKeyPressed = false;
     if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
     {
         if (!lightKeyPressed)
         {
-            // Place a new light at the camera's position.
             lights.emplace_back(camera.Position, glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
             std::cout << "Light placed at: " << camera.Position.x << ", " << camera.Position.y << ", " << camera.Position.z << std::endl;
             lightKeyPressed = true;

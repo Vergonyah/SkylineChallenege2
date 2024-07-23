@@ -12,6 +12,8 @@
 #include <chrono>
 #include <iomanip>
 
+
+// Global variables.
 float sensitivity = 0.1f;
 Camera camera(glm::vec3(0.0f, 20.0f, 50.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, sensitivity);
 
@@ -20,6 +22,8 @@ bool wireframeKeyPressed = false;
 bool showNormals = false;
 std::vector<Light> lights;
 
+
+// Callback function to resize window.
 void framebufferSizeCallback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
@@ -116,13 +120,14 @@ PerformanceMetrics runPerformanceTest(Window& window, Terrain& terrain, int dura
 
 int main(int argc, char* argv[])
 {
+    // Parse the command-line arguments.
     if (argc < 2) {
         std::cout << "Usage: " << argv[0] << " <heightmap_path> [--performance]" << std::endl;
         return -1;
     }
     std::string heightmapPath = argv[1];
     bool runPerformanceMode = (argc > 2 && std::string(argv[2]) == "--performance");
-
+    // Initialize the window. 
     Window window(800, 600, "Terrain Renderer");
     if (!window.init())
     {

@@ -1,35 +1,39 @@
+// light.cpp
+// Implements the renderCube function for visualizing light sources
+
 #include "light.h"
 #include <GL/glew.h>
 
 void renderCube()
 {
+    // Render a small cube to represent the light source
     glBegin(GL_QUADS);
-    // Front
+    // Front face
     glVertex3f(-0.1f, -0.1f,  0.1f);
     glVertex3f( 0.1f, -0.1f,  0.1f);
     glVertex3f( 0.1f,  0.1f,  0.1f);
     glVertex3f(-0.1f,  0.1f,  0.1f);
-    // Back 
+    // Back face
     glVertex3f(-0.1f, -0.1f, -0.1f);
     glVertex3f(-0.1f,  0.1f, -0.1f);
     glVertex3f( 0.1f,  0.1f, -0.1f);
     glVertex3f( 0.1f, -0.1f, -0.1f);
-    // Top 
+    // Top face
     glVertex3f(-0.1f,  0.1f, -0.1f);
     glVertex3f(-0.1f,  0.1f,  0.1f);
     glVertex3f( 0.1f,  0.1f,  0.1f);
     glVertex3f( 0.1f,  0.1f, -0.1f);
-    // Bottom 
+    // Bottom face
     glVertex3f(-0.1f, -0.1f, -0.1f);
     glVertex3f( 0.1f, -0.1f, -0.1f);
     glVertex3f( 0.1f, -0.1f,  0.1f);
     glVertex3f(-0.1f, -0.1f,  0.1f);
-    // Right 
+    // Right face
     glVertex3f( 0.1f, -0.1f, -0.1f);
     glVertex3f( 0.1f,  0.1f, -0.1f);
     glVertex3f( 0.1f,  0.1f,  0.1f);
     glVertex3f( 0.1f, -0.1f,  0.1f);
-    // Left 
+    // Left face
     glVertex3f(-0.1f, -0.1f, -0.1f);
     glVertex3f(-0.1f, -0.1f,  0.1f);
     glVertex3f(-0.1f,  0.1f,  0.1f);
