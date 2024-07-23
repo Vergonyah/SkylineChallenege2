@@ -3,74 +3,57 @@
 
 #include "window.h"
 
-Window::Window(int width, int height, const std::string& title)
+Window::Window(int width, int height, const std::string &title)
     : width(width), height(height), title(title), window(nullptr) {}
 
-Window::~Window()
-{
-    if (window) {
-        glfwDestroyWindow(window);
-    }
+Window::~Window() {
+  if (window) {
+    glfwDestroyWindow(window);
+  }
+  glfwTerminate();
+}
+
+bool Window::init() {
+  // Initialize GLFW
+  if (!glfwInit()) {
+    std::cout << "Failed to initialize GLFW" << std::endl;
+    return false;
+  }
+
+  // Create GLFW window
+  window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
+  if (window == NULL) {
+    std::cout << "Failed to create GLFW window" << std::endl;
     glfwTerminate();
+    return false;
+  }
+
+  glfwMakeContextCurrent(window);
+  glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+
+  // Initialize GLEW
+  if (glewInit() != GLEW_OK) {
+    std::cout << "Failed to initialize GLEW" << std::endl;
+    return false;
+  }
+
+  return true;
 }
 
-bool Window::init()
-{
-    // Initialize GLFW
-    if (!glfwInit()) {
-        std::cout << "Failed to initialize GLFW" << std::endl;
-        return false;
-    }
+bool Window::shouldClose() const { return glfwWindowShouldClose(window); }
 
-    // Create GLFW window
-    window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
-    if (window == NULL)
-    {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        glfwTerminate();
-        return false;
-    }
-
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-
-    // Initialize GLEW
-    if (glewInit() != GLEW_OK)
-    {
-        std::cout << "Failed to initialize GLEW" << std::endl;
-        return false;
-    }
-
-    return true;
+void Window::clear() const {
+  glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-bool Window::shouldClose() const
-{
-    return glfwWindowShouldClose(window);
-}
+void Window::swapBuffers() const { glfwSwapBuffers(window); }
 
-void Window::clear() const
-{
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);  
-}
+void Window::pollEvents() const { glfwPollEvents(); }
 
-void Window::swapBuffers() const
-{
-    glfwSwapBuffers(window);
-}
+GLFWwindow *Window::getWindow() const { return window; }
 
-void Window::pollEvents() const
-{
-    glfwPollEvents();
-}
-
-GLFWwindow* Window::getWindow() const
-{
-    return window;
-}
-
-void Window::framebufferSizeCallback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
+void Window::framebufferSizeCallback(GLFWwindow *window, int width,
+                                     int height) {
+  glViewport(0, 0, width, height);
 }

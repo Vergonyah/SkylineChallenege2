@@ -17,3 +17,6 @@ $(TARGET): $(OBJS)
 
 clean:
 	rm -f $(OBJS) $(TARGET)
+
+format:
+	clang-format -i $(SRCS) $(HEADERS)

@@ -4,51 +4,60 @@
 #ifndef TERRAIN_H
 #define TERRAIN_H
 
-#include <vector>
 #include <GL/glew.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <string>
+#include <vector>
 
 class Terrain {
 public:
-    Terrain(int gridSize);
-    ~Terrain();
+  // Constructor and destructor
+  Terrain(int gridSize);
+  ~Terrain();
 
-    // Public methods
-    bool loadHeightmap(const std::string& filename);
-    void generate();
-    void render() const;
-    void initComputeShader();
-    void computeNormals();
-    void setShowNormals(bool);
-    int getTriangleCount() const;
-    
-    bool showNormals;
+  // Public methods
+  bool loadHeightmap(const std::string &filename);
+  void generate();
+  void render() const;
+  void initComputeShader();
+  void computeNormals();
+  void setShowNormals(bool);
+  int getTriangleCount() const;
+  void setUseCPUOnly(bool useCPU) { useCPUOnly = useCPU; }
+
+  // Public member variable
+  bool showNormals;
 
 private:
-    // Private member variables
-    int gridSize;
-    std::vector<float> vertices;
-    std::vector<unsigned int> indices;
-    std::vector<unsigned char> heightmapData;
-    int heightmapWidth;
-    int heightmapHeight;
+  // Private member variables
+  int gridSize;
+  std::vector<float> vertices;
+  std::vector<unsigned int> indices;
+  std::vector<unsigned char> heightmapData;
+  int heightmapWidth;
+  int heightmapHeight;
 
-    GLuint computeProgram;
-    GLuint heightMapTexture;
-    GLuint normalMapTexture;
+  GLuint computeProgram;
+  GLuint heightMapTexture;
+  GLuint normalMapTexture;
 
-    // Private methods
-    float getHeight(int x, int z) const;
-    glm::vec3 calculateColor(float height) const;
-    void renderNormals() const;
-    std::string loadShaderSource(const std::string& filename);
-    std::vector<float> normals;  
-    void calculateNormals();        
-    GLuint vertexBuffer;
-    GLuint indexBuffer;
-    GLuint normalBuffer;
-    void setupBuffers();
+  std::vector<float> normals;
+  GLuint vertexBuffer;
+  GLuint indexBuffer;
+  GLuint normalBuffer;
+
+  bool useCPUOnly;
+
+  // Private methods
+  float getHeight(int x, int z) const;
+  glm::vec3 calculateColor(float height) const;
+  void renderNormals() const;
+  std::string loadShaderSource(const std::string &filename);
+  void calculateNormals();
+  void calculateNormalsCPU();
+  void setupBuffers();
 };
 
-#endif
+#endif // TERRAIN_H

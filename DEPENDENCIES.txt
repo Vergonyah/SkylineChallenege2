@@ -1,0 +1,17 @@
+# DEPENDENCIES.txt
+
+# Core libraries
+GLFW 
+GLEW 
+GLM 
+
+# Build tools
+CMake 
+GCC 
+
+# Optional tools
+clang-format 
+
+# System libraries
+OpenGL
+X11 development libraries

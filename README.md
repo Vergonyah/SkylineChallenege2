@@ -5,26 +5,41 @@ Second challenge for Skyline Nav AI.
 - Heightmap-based terrain generation.
 - Camera movement and rotation via mouse and keyboard (WASD keys)
 - Dynamic lighting system
-- Wireframe toggle mode (T key)
-- Normal vector visualization (P key)
-- Light placement (L key)
+- Wireframe toggle mode 
+- Normal vector visualization 
+- Light placement 
 - Performance testing mode
+- GPU-accelerated normal calculations using compute shaders
+- CPU-based normal calculations for comparison
 
 ## Dependencies 
 For you to build and run the main code, you need the following dependencies:
-- GLEW
-- GLFW 
-- GLM
-- stb_image
+
+- GLFW
+- GLEW 
+- GLM 
+- stb_image (included)
+
+When I made this program, I did so on Linux, specifically on an Ubuntu based distro. To install these depenencies on Ubuntu/Debian based distros, run the following command on a Bash terminal:
+
+`sudo apt install libglfw3-dev libglew-dev libglm-dev`
+
+Only Windows, you must download each depdency through their website. 
+GLFW LInk: https://www.glfw.org/download
+GLEW Link: https://glew.sourceforge.net/index.html
 
 ## Building
 To build the project, do the following: 
 1. Have all dependencies ready.
 2. Open a terminal in the project directory. 
 3. Run the following command: 'make'
-4. Once terrain_renderer has been made, run it by typing './terrain_renderer <heightmap_path> [--performance]
-- '<heightmap_path>': Path to the heightmap image file to be used.
-- '--performance': Optional flag to have it start in performance mode.
+    3a. If this does not work, you might need to download cmake. Can be done on bash with following command: `sudo apt install build-essential cmake`
+4. Once terrain_renderer has been made, run it by typing './terrain_renderer <heightmap_path> [--performance] [--cpu-only]'
+- `<heightmap_path>`: Path to the heightmap image file to be used.
+- `--performance`: Optional flag to have it start in performance mode.
+- `--cpu-only`: Optional flag to use CPU-only rendering (disables GPU compute shaders)
+
+For testing purposes, I've included a file I've been using - `World_elevation_map.png`, however, any other file works. 
 
 ## Controls 
 - WASD: Moves camera
@@ -53,8 +68,21 @@ GPU kernels are useful when used here for the following reasons:
 
 ## Performance Comparison
 
-- Will fill out later.
+- Your performance will be dependent on your computers specs, however, running with GPU should overall yield a higher average FPS, lower average frame time, and lower normal calculation time. As an example, here are my results. 
 
+When running without --cpu-only:
+Average FPS: 144.05
+Average Frame Time: 6.94 ms
+Average Normal Calculation Time: 0.01 ms
+Triangle Count: 79202
+
+When running with --cpu-only:
+Average FPS: 59.96
+Average Frame Time: 16.68 ms
+Average Normal Calculation Time: 15.78 ms
+Triangle Count: 79202
+
+For reference, I have an EVGA Geforce GTX 1060 with 6GB of VRAM and a Ryzen 5 3600 CPU 6-core CPU.
 
 ## Potential bottlenecks
 
