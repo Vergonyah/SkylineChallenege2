@@ -5,6 +5,9 @@
 #include <sstream>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 Terrain::Terrain(int gridSize)
     : showNormals(false), 
@@ -20,6 +23,9 @@ Terrain::~Terrain() {
     glDeleteProgram(computeProgram);
     glDeleteTextures(1, &heightMapTexture);
     glDeleteTextures(1, &normalMapTexture);
+    glDeleteBuffers(1, &vertexBuffer);
+    glDeleteBuffers(1, &indexBuffer);
+    glDeleteBuffers(1, &normalBuffer);
 }
 
 void Terrain::setShowNormals(bool show) {
@@ -78,6 +84,55 @@ void Terrain::generate() {
             indices.push_back(bottomRight);
         }
     }
+    calculateNormals();
+    setupBuffers();
+
+}
+
+void Terrain::setupBuffers() {
+    glGenBuffers(1, &vertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+    glGenBuffers(1, &indexBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    glGenBuffers(1, &normalBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+}
+
+
+void Terrain::calculateNormals() {
+    normals.clear();
+    normals.resize(vertices.size(), 0.0f);
+
+    for (size_t i = 0; i < indices.size(); i += 3) {
+        unsigned int i0 = indices[i] * 3;
+        unsigned int i1 = indices[i+1] * 3;
+        unsigned int i2 = indices[i+2] * 3;
+
+        glm::vec3 v1(vertices[i0], vertices[i0+1], vertices[i0+2]);
+        glm::vec3 v2(vertices[i1], vertices[i1+1], vertices[i1+2]);
+        glm::vec3 v3(vertices[i2], vertices[i2+1], vertices[i2+2]);
+
+        glm::vec3 normal = glm::normalize(glm::cross(v2 - v1, v3 - v1));
+
+        for (int j = 0; j < 3; ++j) {
+            normals[i0+j] += normal[j];
+            normals[i1+j] += normal[j];
+            normals[i2+j] += normal[j];
+        }
+    }
+
+    for (size_t i = 0; i < normals.size(); i += 3) {
+        glm::vec3 n(normals[i], normals[i+1], normals[i+2]);
+        n = glm::normalize(n);
+        normals[i] = n.x;
+        normals[i+1] = n.y;
+        normals[i+2] = n.z;
+    }
 }
 
 float Terrain::getHeight(int x, int z) const {
@@ -101,20 +156,38 @@ glm::vec3 Terrain::calculateColor(float height) const {
 }
 
 void Terrain::render() const {
-    glBegin(GL_TRIANGLES);
-    for (size_t i = 0; i < indices.size(); i += 3) {
-        for (int j = 0; j < 3; ++j) {
-            int index = indices[i + j];
-            float x = vertices[index * 3];
-            float y = vertices[index * 3 + 1];
-            float z = vertices[index * 3 + 2];
-            
-            glm::vec3 color = calculateColor(y);
-            glColor3f(color.r, color.g, color.b);
-            glVertex3f(x, y, z);
-        }
+    glEnable(GL_LIGHTING);
+    
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glVertexPointer(3, GL_FLOAT, 0, nullptr);
+
+    glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+    glNormalPointer(GL_FLOAT, 0, nullptr);
+
+    std::vector<glm::vec3> colors(vertices.size() / 3);
+    for (size_t i = 0; i < vertices.size(); i += 3) {
+        colors[i / 3] = calculateColor(vertices[i + 1]); 
     }
-    glEnd();
+    GLuint colorBuffer;
+    glGenBuffers(1, &colorBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, colorBuffer);
+    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(glm::vec3), colors.data(), GL_STATIC_DRAW);
+    glColorPointer(3, GL_FLOAT, 0, nullptr);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
+
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+
+    glDeleteBuffers(1, &colorBuffer);
+
+    glDisable(GL_LIGHTING);
 
     if (showNormals) {
         renderNormals();
@@ -151,14 +224,14 @@ void Terrain::initComputeShader() {
 void Terrain::computeNormals() {
     glUseProgram(computeProgram);
 
-    glBindImageTexture(0, heightMapTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-    glBindImageTexture(1, normalMapTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, vertexBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, indexBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, normalBuffer);
 
-    glUniform1f(glGetUniformLocation(computeProgram, "terrainSize"), 50.0f);
     glUniform1i(glGetUniformLocation(computeProgram, "gridSize"), gridSize);
 
-    glDispatchCompute((gridSize + 15) / 16, (gridSize + 15) / 16, 1);
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    glDispatchCompute((gridSize * gridSize + 255) / 256, 1, 1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
 void Terrain::renderNormals() const {

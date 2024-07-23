@@ -1,44 +1,48 @@
-#version 430 core
+#version 430
 
-layout(local_size_x = 16, local_size_y = 16) in;
+layout(local_size_x = 256) in;
 
-layout(rgba32f, binding = 0) uniform image2D heightMap;
-layout(rgba32f, binding = 1) writeonly uniform image2D normalMap;
+layout(std430, binding = 0) buffer VertexBuffer {
+    vec4 vertices[];
+};
 
-uniform float terrainSize;
+layout(std430, binding = 1) buffer IndexBuffer {
+    uint indices[];
+};
+
+layout(std430, binding = 2) buffer NormalBuffer {
+    vec4 normals[];
+};
+
 uniform int gridSize;
 
 void main() {
-    ivec2 pixelCoords = ivec2(gl_GlobalInvocationID.xy);
-    
-    if(pixelCoords.x >= gridSize || pixelCoords.y >= gridSize) {
-        return;
+    uint gid = gl_GlobalInvocationID.x;
+    if (gid >= gridSize * gridSize) return;
+
+    vec3 normal = vec3(0.0, 0.0, 0.0);
+
+    // Calculate normals for surrounding faces
+    for (int i = -1; i <= 1; i++) {
+        for (int j = -1; j <= 1; j++) {
+            if (i == 0 && j == 0) continue;
+
+            int x = int(gid % gridSize) + i;
+            int z = int(gid / gridSize) + j;
+
+            if (x < 0 || x >= gridSize - 1 || z < 0 || z >= gridSize - 1) continue;
+
+            uint index = z * gridSize + x;
+            
+            vec3 v1 = vertices[indices[index * 6]].xyz;
+            vec3 v2 = vertices[indices[index * 6 + 1]].xyz;
+            vec3 v3 = vertices[indices[index * 6 + 2]].xyz;
+
+            vec3 edge1 = v2 - v1;
+            vec3 edge2 = v3 - v1;
+            normal += normalize(cross(edge1, edge2));
+        }
     }
 
-    float cellSize = terrainSize / float(gridSize - 1);
-
-    vec3 pos = vec3(
-        float(pixelCoords.x) * cellSize - terrainSize / 2.0,
-        imageLoad(heightMap, pixelCoords).r,
-        float(pixelCoords.y) * cellSize - terrainSize / 2.0
-    );
-
-    vec3 n = vec3(0.0, 1.0, 0.0);
-
-    if(pixelCoords.x < gridSize - 1 && pixelCoords.y < gridSize - 1) {
-        vec3 pos_dx = vec3(
-            pos.x + cellSize,
-            imageLoad(heightMap, pixelCoords + ivec2(1, 0)).r,
-            pos.z
-        );
-        vec3 pos_dz = vec3(
-            pos.x,
-            imageLoad(heightMap, pixelCoords + ivec2(0, 1)).r,
-            pos.z + cellSize
-        );
-
-        n = normalize(cross(pos_dx - pos, pos_dz - pos));
-    }
-
-    imageStore(normalMap, pixelCoords, vec4(n, 1.0));
+    normals[gid] = vec4(normalize(normal), 0.0);
 }

@@ -2,8 +2,10 @@
 #include "input.h"
 #include "terrain.h"
 #include "camera.h"
+#include "light.h"
 #include <iostream>
 #include <string>
+#include <vector>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -15,10 +17,48 @@ Camera camera(glm::vec3(0.0f, 20.0f, 50.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f
 bool wireframe = false;
 bool wireframeKeyPressed = false;
 bool showNormals = false;
+std::vector<Light> lights;
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
+}
+
+// Need to make light cpp and move this into it later. 
+void renderCube()
+{
+    glBegin(GL_QUADS);
+    // Front
+    glVertex3f(-0.1f, -0.1f,  0.1f);
+    glVertex3f( 0.1f, -0.1f,  0.1f);
+    glVertex3f( 0.1f,  0.1f,  0.1f);
+    glVertex3f(-0.1f,  0.1f,  0.1f);
+    // Back 
+    glVertex3f(-0.1f, -0.1f, -0.1f);
+    glVertex3f(-0.1f,  0.1f, -0.1f);
+    glVertex3f( 0.1f,  0.1f, -0.1f);
+    glVertex3f( 0.1f, -0.1f, -0.1f);
+    // Top 
+    glVertex3f(-0.1f,  0.1f, -0.1f);
+    glVertex3f(-0.1f,  0.1f,  0.1f);
+    glVertex3f( 0.1f,  0.1f,  0.1f);
+    glVertex3f( 0.1f,  0.1f, -0.1f);
+    // Bottom 
+    glVertex3f(-0.1f, -0.1f, -0.1f);
+    glVertex3f( 0.1f, -0.1f, -0.1f);
+    glVertex3f( 0.1f, -0.1f,  0.1f);
+    glVertex3f(-0.1f, -0.1f,  0.1f);
+    // Right 
+    glVertex3f( 0.1f, -0.1f, -0.1f);
+    glVertex3f( 0.1f,  0.1f, -0.1f);
+    glVertex3f( 0.1f,  0.1f,  0.1f);
+    glVertex3f( 0.1f, -0.1f,  0.1f);
+    // Left 
+    glVertex3f(-0.1f, -0.1f, -0.1f);
+    glVertex3f(-0.1f, -0.1f,  0.1f);
+    glVertex3f(-0.1f,  0.1f,  0.1f);
+    glVertex3f(-0.1f,  0.1f, -0.1f);
+    glEnd();
 }
 
 int main(int argc, char* argv[])
@@ -86,8 +126,28 @@ int main(int argc, char* argv[])
         glm::mat4 view = camera.GetViewMatrix();
         glLoadMatrixf(glm::value_ptr(view));
 
+        for (size_t i = 0; i < lights.size(); ++i) {
+            GLenum lightEnum = GL_LIGHT0 + i;
+            glEnable(lightEnum);
+            GLfloat lightPos[] = {lights[i].position.x, lights[i].position.y, lights[i].position.z, 1.0f};
+            glLightfv(lightEnum, GL_POSITION, lightPos);
+            GLfloat lightColor[] = {lights[i].color.r, lights[i].color.g, lights[i].color.b, 1.0f};
+            glLightfv(lightEnum, GL_DIFFUSE, lightColor);
+            glLightf(lightEnum, GL_CONSTANT_ATTENUATION, 1.0f / lights[i].intensity);
+        }
+
         terrain.computeNormals();
         terrain.render();
+
+        glDisable(GL_LIGHTING);
+        for (const auto& light : lights) {
+            glPushMatrix();
+            glTranslatef(light.position.x, light.position.y, light.position.z);
+            glColor3f(light.color.r, light.color.g, light.color.b);
+            renderCube();
+            glPopMatrix();
+        }
+        glEnable(GL_LIGHTING);
 
         window.swapBuffers();
         window.pollEvents();

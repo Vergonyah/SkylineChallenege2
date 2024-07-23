@@ -36,6 +36,12 @@ private:
     glm::vec3 calculateColor(float height) const;
     void renderNormals() const;
     std::string loadShaderSource(const std::string& filename);
-};
+    std::vector<float> normals;  
+    void calculateNormals();        
+    GLuint vertexBuffer;
+    GLuint indexBuffer;
+    GLuint normalBuffer;
+    void setupBuffers();
+    };
 
 #endif

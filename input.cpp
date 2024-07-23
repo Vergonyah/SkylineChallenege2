@@ -1,9 +1,13 @@
 #include "input.h"
+#include "light.h"
+#include <vector>
 #include <iostream>
 
 bool leftMouseButtonPressed = false;
 float lastX = 400, lastY = 300;
 bool firstMouse = true;
+
+extern std::vector<Light> lights;
 
 void processInput(GLFWwindow* window, Camera& camera, float deltaTime, bool& wireframe, bool& wireframeKeyPressed, bool& showNormals)
 {
@@ -46,6 +50,22 @@ void processInput(GLFWwindow* window, Camera& camera, float deltaTime, bool& wir
     else
     {
         normalKeyPressed = false;
+    }
+
+        static bool lightKeyPressed = false;
+    if (glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS)
+    {
+        if (!lightKeyPressed)
+        {
+            // Place a new light at the camera's position.
+            lights.emplace_back(camera.Position, glm::vec3(1.0f, 1.0f, 1.0f), 1.0f);
+            std::cout << "Light placed at: " << camera.Position.x << ", " << camera.Position.y << ", " << camera.Position.z << std::endl;
+            lightKeyPressed = true;
+        }
+    }
+    else
+    {
+        lightKeyPressed = false;
     }
 }
 
