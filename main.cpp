@@ -3,6 +3,7 @@
 #include "terrain.h"
 #include "camera.h"
 #include <iostream>
+#include <string>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -18,8 +19,15 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+    if (argc != 2) {
+        std::cout << "Usage: " << argv[0] << " <heightmap_path>" << std::endl;
+        return -1;
+    }
+    std::string heightmapPath = argv[1];
+
+    
     Window window(800, 600, "Terrain Renderer");
     if (!window.init())
     {
@@ -34,9 +42,19 @@ int main()
     glfwSetWindowUserPointer(window.getWindow(), &camera);
 
     Terrain terrain(200);
+    if (!terrain.loadHeightmap(heightmapPath)) {
+        std::cerr << "Failed to load heightmap. Exiting." << std::endl;
+        return -1;
+    }
+    
     terrain.generate();
-
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LIGHTING);
+    glEnable(GL_LIGHT0);
+    glEnable(GL_COLOR_MATERIAL);
+
+    GLfloat lightPos[] = {50.0f, 50.0f, 50.0f, 1.0f};
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
     glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL); // Set initial polygon mode
 
     while (!window.shouldClose())
