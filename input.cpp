@@ -5,7 +5,7 @@ bool leftMouseButtonPressed = false;
 float lastX = 400, lastY = 300;
 bool firstMouse = true;
 
-void processInput(GLFWwindow* window, Camera& camera, float deltaTime, bool& wireframe, bool& wireframeKeyPressed)
+void processInput(GLFWwindow* window, Camera& camera, float deltaTime, bool& wireframe, bool& wireframeKeyPressed, bool& showNormals)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
@@ -32,6 +32,20 @@ void processInput(GLFWwindow* window, Camera& camera, float deltaTime, bool& wir
     else
     {
         wireframeKeyPressed = false;
+    }
+
+    static bool normalKeyPressed = false;
+    if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS)
+    {
+        if (!normalKeyPressed)
+        {
+            showNormals = !showNormals;
+            normalKeyPressed = true;
+        }
+    }
+    else
+    {
+        normalKeyPressed = false;
     }
 }
 

@@ -1,12 +1,30 @@
 #include "terrain.h"
 #include <cmath>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-Terrain::Terrain(int gridSize) : gridSize(gridSize), heightmapWidth(0), heightmapHeight(0) {}
+Terrain::Terrain(int gridSize)
+    : showNormals(false), 
+      gridSize(gridSize),
+      heightmapWidth(0), 
+      heightmapHeight(0), 
+      computeProgram(0),
+      heightMapTexture(0),
+      normalMapTexture(0) {}
 
-Terrain::~Terrain() {}
+
+Terrain::~Terrain() {
+    glDeleteProgram(computeProgram);
+    glDeleteTextures(1, &heightMapTexture);
+    glDeleteTextures(1, &normalMapTexture);
+}
+
+void Terrain::setShowNormals(bool show) {
+    showNormals = show;
+}
 
 bool Terrain::loadHeightmap(const std::string& filename) {
     int channels;
@@ -97,4 +115,78 @@ void Terrain::render() const {
         }
     }
     glEnd();
+
+    if (showNormals) {
+        renderNormals();
+    }
+}
+
+
+void Terrain::initComputeShader() {
+    GLuint computeShader = glCreateShader(GL_COMPUTE_SHADER);
+    std::string computeShaderSource = loadShaderSource("compute_shader.glsl");
+    const char* source = computeShaderSource.c_str();
+    glShaderSource(computeShader, 1, &source, nullptr);
+    glCompileShader(computeShader);
+
+    computeProgram = glCreateProgram();
+    glAttachShader(computeProgram, computeShader);
+    glLinkProgram(computeProgram);
+
+    glDeleteShader(computeShader);
+
+    glGenTextures(1, &heightMapTexture);
+    glBindTexture(GL_TEXTURE_2D, heightMapTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, gridSize, gridSize, 0, GL_RED, GL_FLOAT, vertices.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glGenTextures(1, &normalMapTexture);
+    glBindTexture(GL_TEXTURE_2D, normalMapTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, gridSize, gridSize, 0, GL_RGBA, GL_FLOAT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+}
+
+void Terrain::computeNormals() {
+    glUseProgram(computeProgram);
+
+    glBindImageTexture(0, heightMapTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+    glBindImageTexture(1, normalMapTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+    glUniform1f(glGetUniformLocation(computeProgram, "terrainSize"), 50.0f);
+    glUniform1i(glGetUniformLocation(computeProgram, "gridSize"), gridSize);
+
+    glDispatchCompute((gridSize + 15) / 16, (gridSize + 15) / 16, 1);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+}
+
+void Terrain::renderNormals() const {
+    glDisable(GL_LIGHTING);
+    glColor3f(1.0f, 1.0f, 0.0f);  // Yellow color for normals
+    glBegin(GL_LINES);
+    for (size_t i = 0; i < indices.size(); i += 3) {
+        glm::vec3 v1(vertices[indices[i] * 3], vertices[indices[i] * 3 + 1], vertices[indices[i] * 3 + 2]);
+        glm::vec3 v2(vertices[indices[i+1] * 3], vertices[indices[i+1] * 3 + 1], vertices[indices[i+1] * 3 + 2]);
+        glm::vec3 v3(vertices[indices[i+2] * 3], vertices[indices[i+2] * 3 + 1], vertices[indices[i+2] * 3 + 2]);
+
+        glm::vec3 normal = glm::normalize(glm::cross(v2 - v1, v3 - v1));
+        glm::vec3 center = (v1 + v2 + v3) / 3.0f;
+
+        glVertex3f(center.x, center.y, center.z);
+        glVertex3f(center.x + normal.x, center.y + normal.y, center.z + normal.z);
+    }
+    glEnd();
+    glEnable(GL_LIGHTING);
+}
+
+std::string Terrain::loadShaderSource(const std::string& filename) {
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open shader file: " << filename << std::endl;
+        return "";
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
 }
